@@ -1,5 +1,6 @@
 var _feed = require('feedme');
 var _http = require('http');
+var _html_to_text = require('html-to-text');
 
 function get_events(park_name, date, callback) {
 	_http.get('http://www.trumba.com/calendars/parks-recreation.rss', function(res) {
@@ -16,27 +17,89 @@ function get_events(park_name, date, callback) {
 }
 
 function parse_event(rss_item) {
-/*description: 
-<location> 'Hangar 30, Magnuson Park <br/>'
-<time> 'Sunday, April 10, 2016, 9am&nbsp;&ndash;&nbsp;9pm <br/><br/>'
-<detail> 'Public Art show. Admission fee. Contact Northwest Art Alliance for cost and event details. Around 800 people anticipated to attend each day. Friday 4/8 is setup day Show dates are 4/9 &amp; 4/10 Saturday 10am-6pm &amp; Sunday 10am-5pm Building 30&#39;s south parking lot will be closed to public and used as part of the event staging &amp; ADA parking. <br/><br/>'
-'<b>Event Types</b>:&nbsp;Arts, Special Events <br/>'
-'<b>Neighborhoods</b>:&nbsp;Laurelhurst/Sand Point <br/>'
-'<b>Sponsoring Organization</b>:&nbsp;Northwest Art Alliance <br/>'
-'<b>Contact</b>:&nbsp;Molly Bryan <br/>'
-'<b>Audience</b>:&nbsp;All <br/>'
-'<b>Pre-Register</b>:&nbsp;No <br/>'
-'<b>Cost</b>:&nbsp;Contact Northwest Art Alliance for cost and event details <br/>'
-'<b>More info</b>:&nbsp;<a href="http://nwartalliance.org/events/" target="_blank" title="http://nwartalliance.org/events/">nwartalliance.org&#8230;</a> <br/><br/>'
-*/
-	var fields = rss_item['description'].split('<br/>');
-	console.log(fields.length);
-	
+	var event_info = {};
+	rss_item['description'].split('<br/><br/>').forEach(function(item) {
+		var text = item.trim();
+		if (text.length > 0) {
+			if (typeof(event_info['time']) === 'undefined' && / \d{1,2}, \d{4}/.test(text)) {
+				var loc_date = parse_loc_date(text);
+				event_info['time'] = loc_date.time;
+				event_info['location'] = loc_date.location;
+			} else if (text.startsWith('<img')) {
+				// Not using this for now
+			} else if (text.startsWith('<b>')) {
+				parse_opt_params(text).forEach(function(opt) {
+					event_info[opt.name] = opt.val;
+				});
+			} else {
+				if (typeof(event_info['description']) !== 'undefined') {
+					throw new Error('Found description twice');
+				}
+				event_info['description'] = _html_to_text.fromString(text).trim();
+			}
+		}
+	});
+
+	if (typeof(event_info['name']) !== 'undefined') {
+		throw new Error('Namesapce conflict on member "name"');
+	}
+	event_info['name'] = rss_item['title'];
+
+	if (typeof(event_info['event_link']) !== 'undefined') {
+		throw new Error('Namesapce conflict on member "event_link"');
+	}
+	event_info['event_link'] = rss_item['link'];
+
+	if (typeof(event_info['event_day']) !== 'undefined') {
+		throw new Error('Namesapce conflict on member "event_day"');
+	}
+	event_info['event_day'] = rss_item['category'];
+
+	return event_info;
+}
+
+function parse_loc_date(text) {
+	var entries = text.split('<br/>').map(function(item) {
+		return _html_to_text.fromString(item).trim();
+	});
+
+	var location, time;
+	if (entries.length === 1) {
+		location = 'N/A';
+		time = entries[0];
+	} else if (entries.length === 2) {
+		location = entries[0];
+		time = entries[1];
+	} else {
+		throw new Error('Unexpected location/date parsing result - ' + entries.length + ' entries');
+	}
+
 	return {
-		name: rss_item['title'],
-		time: 'asdf',
-		address: 'asdf'
+		location: location,
+		time: time
 	};
+}
+
+function parse_opt_params(text) {
+	return text.split('<br/>').map(function(item) {
+		var split_point = item.indexOf(':');
+		if (split_point < 0) {
+			console.log(item);
+			throw new Error('Error parsing - couldn\'t find token');
+		}
+
+		var name = item.substring(0, split_point);
+		name = _html_to_text.fromString(name).trim().toLowerCase().replace(/[\/\s-#]+/g, '_');
+		name = name.replace(/_+$/, '').replace(/^_+/, '');
+
+		var val = item.substring(split_point + 1);
+		val = _html_to_text.fromString(val).trim();
+
+		return {
+			name: name,
+			val: val
+		}
+	});
 }
 
 module.exports = {

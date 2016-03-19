@@ -11,7 +11,8 @@
     "url": "https://github.com/verespej/att-parks-and-rec.git"
   },
   "dependencies": {
-    "feedme": "^0.3.0"
+    "feedme": "^0.3.0",
+    "html-to-text": "^2.0.0"
   },
   "license": "MIT"
 }
