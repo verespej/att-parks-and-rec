@@ -81,10 +81,18 @@ function onIntent(intentRequest, session, callback) {
     // Dispatch to your skill's intent handlers
     if ("WhatsHappeningInParkIntent" === intentName) {
         getWhatsHappeningInPark(intent, session, callback);
-    } else if ("WhatsMyColorIntent" === intentName) {
-        getColorFromSession(intent, session, callback);
+    } else if ("ParkwaysBlogPostsIntent" === intentName) {
+        getParkwaysBlogPosts(intent, session, callback);
+    } else if ("AMAZON.YesIntent" === intentName) {
+        readMore(intent, session, callback);
+    } else if ("AMAZON.NoIntent" === intentName) {
+        nextBlogPost(intent, session, callback);
     } else if ("AMAZON.HelpIntent" === intentName) {
         getWelcomeResponse(callback);
+    } else if ("AMAZON.StopIntent" === intentName) {
+        getStopResponse(callback);
+    } else if ("AMAZON.CancelIntent" === intentName) {
+        getStopResponse(callback);
     } else {
         throw "Invalid intent";
     }
@@ -106,8 +114,8 @@ function getWelcomeResponse(callback) {
     // If we wanted to initialize the session to have some attributes we could add those here.
     var sessionAttributes = {};
     var cardTitle = "Welcome";
-    var speechOutput = "Welcome to the Seattle Park Skill. " +
-        "What park do you want to go to?";
+    var speechOutput = "Welcome to the Seattle Parks And Recreation. " +
+        "What would you like to do? You can say hwat is happening in Magnuson Park or read the latest Parkways blog post.";
     // If the user either does not reply to the welcome message or says something that is not
     // understood, they will be prompted again with this text.
     var repromptText = "Please tell me your favorite color by saying, " +
@@ -128,15 +136,20 @@ function getWhatsHappeningInPark(intent, session, callback) {
     var repromptText = "";
     var sessionAttributes = {};
     var shouldEndSession = false;
-    var speechOutput = "";
+    var speechOutput = "I was not able to catch that. What park did you want to go to?";
 
     var park = parkSlot.value;
+    
+    if (!park) {
+        callback(sessionAttributes,
+                     buildSpeechletResponse(intent.name, speechOutput, repromptText, shouldEndSession)); 
+    }
 
     var https = require('https');
     
     var options = {
         host: 'www.trumba.com',
-        path: '/calendars/volunteer-1.rss?startdate=20150319&search=' + park.replace(/\s?park/i,"")
+        path: '/calendars/volunteer-1.rss?startdate=20160319&search=' + park.replace(/\s?park/i,"")
     }
 
     var request = https.request(options, function (res) {
@@ -182,36 +195,112 @@ function getWhatsHappeningInPark(intent, session, callback) {
     
 }
 
-function createFavoriteColorAttributes(favoriteColor) {
-    return {
-        favoriteColor: favoriteColor
-    };
-}
-
-function getColorFromSession(intent, session, callback) {
-    var favoriteColor;
-    var repromptText = null;
+function getParkwaysBlogPosts(intent, session, callback) {
+    var cardTitle = intent.name;
+    var repromptText = "";
     var sessionAttributes = {};
     var shouldEndSession = false;
-    var speechOutput = "";
+    var speechOutput = "There was no recent blog post.";
 
-    if (session.attributes) {
-        favoriteColor = session.attributes.favoriteColor;
+    var https = require('https');
+    
+    var options = {
+        host: 'ajax.googleapis.com',
+        path: '/ajax/services/feed/load?v=2.0&q=http://parkways.seattle.gov/feed/&num=3'
     }
 
-    if (favoriteColor) {
-        speechOutput = "Your favorite color is " + favoriteColor + ". Goodbye.";
-        shouldEndSession = true;
-    } else {
-        speechOutput = "I'm not sure what your favorite color is, you can say, my favorite color " +
-            " is red";
+    var request = https.request(options, function (res) {
+        var data = '';
+        res.on('data', function (chunk) {
+            data += chunk;
+        });
+        res.on('end', function () {
+            
+            blogPosts = JSON.parse(data);
+
+            speechOutput = blogPosts.responseData.feed.entries[0].title + " by " + blogPosts.responseData.feed.entries[0].author + ". Would you like me to read more?";
+            
+            sessionAttributes.blogPosts = blogPosts;
+            sessionAttributes.cursor = 0;
+
+            // Setting repromptText to null signifies that we do not want to reprompt the user.
+            // If the user does not respond or says something that is not understood, the session
+            // will end.
+            callback(sessionAttributes,
+                     buildSpeechletResponse(intent.name, speechOutput, repromptText, shouldEndSession)); 
+
+        });
+    });
+    request.on('error', function (e) {
+        console.log(e.message);
+    });
+    request.end();
+}
+
+
+function readMore(intent, session, callback) {
+    var cardTitle = intent.name;
+    var repromptText = "";
+    var sessionAttributes = {};
+    var shouldEndSession = false;
+    var speechOutput = "I did not get that. What did you want to do?";
+    
+    if (session.hasOwnProperty("attributes") && session.attributes.hasOwnProperty("blogPosts")) {
+        speechOutput = session.attributes.blogPosts.responseData.feed.entries[session.attributes.cursor].content.replace(/(<([^>]+)>)/ig,"");
+        
+        speechOutput += "The next blog post is " + session.attributes.blogPosts.responseData.feed.entries[session.attributes.cursor+1].title + " by " + blogPosts.responseData.feed.entries[session.attributes.cursor+1].author + ". Would you like me to read more?";
+    
+        sessionAttributes.blogPosts = session.attributes.blogPosts;
+        sessionAttributes.cursor = session.attributes.cursor+1;
     }
+    
+    // Setting repromptText to null signifies that we do not want to reprompt the user.
+    // If the user does not respond or says something that is not understood, the session
+    // will end.
+    callback(sessionAttributes,
+             buildSpeechletResponse(intent.name, speechOutput, repromptText, shouldEndSession)); 
+
+}
+
+function nextBlogPost(intent, session, callback) {
+    var cardTitle = intent.name;
+    var repromptText = "";
+    var sessionAttributes = {};
+    var shouldEndSession = false;
+    var speechOutput = "I did not get that. What did you want to do?";
+    
+    if (session.hasOwnProperty("attributes") && session.attributes.hasOwnProperty("blogPosts")) {
+        if (session.attributes.cursor > session.attributes.blogPosts.responseData.feed.entries.length-2) {
+            speechOutput = "This was the last blog post. What would you like to do next?";
+        } else {
+            speechOutput = "The next blog post is " + session.attributes.blogPosts.responseData.feed.entries[session.attributes.cursor+1].title + " by " + blogPosts.responseData.feed.entries[session.attributes.cursor+1].author + ". Would you like me to read more?";
+        
+            sessionAttributes.blogPosts = session.attributes.blogPosts;
+            sessionAttributes.cursor = session.attributes.cursor+1;
+        }
+    }
+    
+    // Setting repromptText to null signifies that we do not want to reprompt the user.
+    // If the user does not respond or says something that is not understood, the session
+    // will end.
+    callback(sessionAttributes,
+             buildSpeechletResponse(intent.name, speechOutput, repromptText, shouldEndSession)); 
+
+}
+
+
+function getStopResponse(callback) {
+    var repromptText = null;
+    var cardTitle = "Goodbye";
+    var shouldEndSession = true;
+    var speechOutput = "Thanks for checking in with Seattle Parks. Enjoy your next park visit!";
+    var sessionAttributes = {};
 
     // Setting repromptText to null signifies that we do not want to reprompt the user.
     // If the user does not respond or says something that is not understood, the session
     // will end.
     callback(sessionAttributes,
-         buildSpeechletResponse(intent.name, speechOutput, repromptText, shouldEndSession));
+             buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
 }
 
 // --------------- Helpers that build all of the responses -----------------------
