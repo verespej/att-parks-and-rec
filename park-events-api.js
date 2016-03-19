@@ -1,6 +1,7 @@
 var _feed = require('feedme');
 var _http = require('http');
 var _html_to_text = require('html-to-text');
+var _moment = require('moment');
 
 function get_events(park_name, date, callback) {
 	_http.get('http://www.trumba.com/calendars/parks-recreation.rss', function(res) {
@@ -23,8 +24,10 @@ function parse_event(rss_item) {
 		if (text.length > 0) {
 			if (typeof(event_info['time']) === 'undefined' && / \d{1,2}, \d{4}/.test(text)) {
 				var loc_date = parse_loc_date(text);
-				event_info['time'] = loc_date.time;
 				event_info['location'] = loc_date.location;
+				event_info['day'] = loc_date.day;
+				event_info['start_time'] = loc_date.start_time;
+				event_info['end_time'] = loc_date.end_time;
 			} else if (text.startsWith('<img')) {
 				// Not using this for now
 			} else if (text.startsWith('<b>')) {
@@ -63,28 +66,63 @@ function parse_loc_date(text) {
 		return _html_to_text.fromString(item).trim();
 	});
 
-	var location, time;
+	var location = 'N/A', time_text = 'N/A', day = null, start_time = null, end_time = null;
+	var loc_index = -1;
+	var time_index = -1;
+
 	if (entries.length === 1) {
-		location = 'N/A';
-		time = entries[0];
+		time_index = 0;
 	} else if (entries.length === 2) {
-		location = entries[0];
-		time = entries[1];
+		loc_index = 0;
+		time_index = 1;
 	} else {
 		throw new Error('Unexpected location/date parsing result - ' + entries.length + ' entries');
 	}
 
+	if (loc_index >= 0) {
+		location = entries[loc_index];
+	}
+
+	if (time_index >= 0) {
+		var time_parts = entries[time_index].match(/^\w+, (\w+ \d+, \d{4}), ([\w\d:]+) [-–] ([\w\d:]+)/);
+
+		// TODO: Moment doesn't like the format of this date
+		day = _moment(time_parts[1]);
+
+		var start_time_text = time_parts[2];
+		var end_time_text = time_parts[3];
+
+		var time_regex = /[\d:]+(am|pm)/;
+		if (!time_regex.test(start_time_text)) {
+			start_time_text += end_time_text.match(/[\d:]+(am|pm)/)[1];
+		}
+
+		start_time = day.clone().add(to_24_hour_time(start_time_text), 'h');
+		end_time = day.clone().add(to_24_hour_time(end_time_text), 'h');
+	}
+
 	return {
 		location: location,
-		time: time
+		time_text: time_text,
+		day: day.format(),
+		start_time: start_time.format(),
+		end_time: end_time.format()
 	};
+}
+
+function to_24_hour_time(text) {
+	var parts = text.match(/(\d{1,2})(\w{2})/);
+	var hour = parseInt(parts[1]) % 12;
+	if (parts[2].toLowerCase() === 'pm') {
+		hour += 12;
+	}
+	return hour;
 }
 
 function parse_opt_params(text) {
 	return text.split('<br/>').map(function(item) {
 		var split_point = item.indexOf(':');
 		if (split_point < 0) {
-			console.log(item);
 			throw new Error('Error parsing - couldn\'t find token');
 		}
 
