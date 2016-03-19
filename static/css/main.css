@@ -8,14 +8,13 @@ body {
   /* Margin bottom by footer height */
   margin-bottom: 60px;
 }
-.footer {
+/*.footer {
   position: absolute;
   bottom: 0;
   width: 100%;
-  /* Set the fixed height of the footer here */
   height: 60px;
   background-color: #f5f5f5;
-}
+}*/
 
 
 /* Custom page CSS
@@ -31,6 +30,28 @@ body {
   margin: 20px 0;
 }
 
+.chev {
+  float: right;
+}
+
+h3 {
+  width: 90%;
+  padding-right: 9%;
+}
+
+.footer {
+
+    height: 60px; 
+    width: 100%; 
+    background-image: none;
+    background-repeat: repeat;
+    background-attachment: scroll;
+    background-position: 0% 0%;
+    position: fixed;
+    bottom: 0pt;
+    left: 0pt;
+    background-color: white;
+}
 
 img {
   height: 40px;
