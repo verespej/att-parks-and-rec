@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "feedme": "^0.3.0",
+    "memory-streams": "^0.1.0",
     "q": "^1.4.1",
     "request": "^2.69.0"
   },
