@@ -66,7 +66,7 @@ function parse_loc_date(text) {
 		return _html_to_text.fromString(item).trim();
 	});
 
-	var location = 'N/A', time_text = 'N/A', day = null, start_time = null, end_time = null;
+	var location = null, time_text = null, day = null, start_time = null, end_time = null;
 	var loc_index = -1;
 	var time_index = -1;
 
