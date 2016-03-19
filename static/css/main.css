@@ -33,6 +33,13 @@ body {
 
 
 img {
-  height: 60px;
+  height: 40px;
   width: auto;
+}
+
+.row {
+  display: block;
+  margin: auto;
+  text-align: center;
+  margin-top: 2%;
 }
