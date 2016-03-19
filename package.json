@@ -1,0 +1,19 @@
+{
+  "name": "park-events-api",
+  "version": "0.0.1",
+  "description": "Programmatic access to Seattle parks events",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "main": "park-events-api.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/verespej/att-parks-and-rec.git"
+  },
+  "dependencies": {
+    "feedme": "^0.3.0",
+    "q": "^1.4.1",
+    "request": "^2.69.0"
+  },
+  "license": "MIT"
+}
