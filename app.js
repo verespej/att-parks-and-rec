@@ -56,9 +56,9 @@ _park_events_api.get_events(null, null, function(err, events) {
     return console.error('Fatal error getting events');
   }
   app.get('/api/events', function(req, res, next) {
-    var park_name = req.query.park_name.toLowerCase();
     var filtered = events;
-    if (typeof(park_name) !== 'undefined') {
+    if (typeof(req.query.park_name) !== 'undefined') {
+      var park_name = req.query.park_name.toLowerCase();
       filtered = events.filter(function(event) {
         var include = (event.location && event.location.toLowerCase().includes(park_name)) || 
           (event.name && event.name.toLowerCase().includes(park_name)) || 
