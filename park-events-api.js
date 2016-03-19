@@ -3,6 +3,22 @@ var _http = require('http');
 
 function get_events(park_name, date, callback) {
 	_http.get('http://www.trumba.com/calendars/parks-recreation.rss', function(res) {
+		
+		var titleRegex = /<title>(.*)<\/title>/ig;
+		var titles = res.match(titleRegex);
+		
+		// Title
+		console.log(titles[2].replace(/<\/?title>/g,""));
+		
+		var descriptionRegex = /<description>(.*)<\/description>/ig;
+		var descriptions = res.match(descriptionRegex);
+		
+		// &lt;br/&gt;Saturday, October 8, 2016, 10am&amp;nbsp;&amp;ndash;&amp;nbsp;2pm &lt;br/&gt;&lt;br/&gt;
+		// Address
+		console.log(descriptions[0].match(/<description>(.*?)&lt;br\/&gt;/ig)[0].replace(/<description>/,"").replace(/&lt;br\/&gt;/g,""));
+		// Date
+		console.log(descriptions[0].match(/&lt;br\/&gt;(.*?)&lt;br\/&gt;&lt;br\/&gt;/ig)[0].replace(/&lt;br\/&gt;/g,"").replace(/&amp;nbsp;&amp;ndash;&amp;nbsp;/," to "));
+
 		var events = [];
 		var parser = new _feed();
 		parser.on('item', function(item) {
