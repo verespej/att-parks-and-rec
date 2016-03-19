@@ -2,7 +2,7 @@ var _feed = require('feedme');
 var _http = require('http');
 
 function get_events(park_name, date, callback) {
-	_http.get('http://www.trumba.com/calendars/parks-recreation.rss', function(res) {
+	_http.get('http://www.trumba.com/calendars/parks-recreation.rss?search=' + park_name, function(res) {
 		
 		var titleRegex = /<title>(.*)<\/title>/ig;
 		var titles = res.match(titleRegex);
