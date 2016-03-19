@@ -1,25 +1,18 @@
 var _feed = require('feedme');
-var _request = require('request');
-var _streams = require('memory-streams');
+var _http = require('http');
 
 function get_events(callback) {
-	_request('http://www.trumba.com/calendars/parks-recreation.rss', function(err, res, body) {
-		if (err) {
-			return callback(err);
-		}
-
+	_http.get('http://www.trumba.com/calendars/parks-recreation.rss', function(res) {
 		var events = [];
-		var reader = new _streams.ReadableStream(body);
 		var parser = new _feed();
 		parser.on('item', function(item) {
-			console.log(item);
+			events.push(item);
 		});
-		reader.pipe(parser);
-		reader.on('error', callback);
-		reader.on('end', function() {
+		res.pipe(parser);
+		res.on('end', function() {
 			callback(null, events);
 		});
-	});
+	}).on('error', callback);
 }
 
 module.exports = {
