@@ -43,6 +43,11 @@ function parse_event(rss_item) {
 		}
 	});
 
+	if (typeof(event_info['guid']) !== 'undefined') {
+		throw new Error('Namesapce conflict on member "guid"');
+	}
+	event_info['guid'] = rss_item['guid'].text;
+
 	if (typeof(event_info['name']) !== 'undefined') {
 		throw new Error('Namesapce conflict on member "name"');
 	}

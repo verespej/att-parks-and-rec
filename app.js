@@ -55,8 +55,21 @@ _park_events_api.get_events(null, null, function(err, events) {
   if (err) {
     return console.error('Fatal error getting events');
   }
+
+  app.get('/api/events/:id', function(req, res, next) {
+    for (var i = 0; i < events.length; i++) {
+      if (events[i].guid === req.params.id) {
+        res.json(events[i]);
+        return next();
+      }
+    }
+    res.status(404).send('Not found');
+    next();
+  });
+
   app.get('/api/events', function(req, res, next) {
     var filtered = events;
+
     if (typeof(req.query.park_name) !== 'undefined') {
       var park_name = req.query.park_name.toLowerCase();
       filtered = events.filter(function(event) {
