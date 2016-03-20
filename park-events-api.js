@@ -7,9 +7,17 @@ function get_events(park_name, date, callback) {
 	_http.get('http://www.trumba.com/calendars/parks-recreation.rss', function(res) {
 		var events = [];
 		var parser = new _feed();
+
+		var now = _moment();
+		var today = _moment([now.year(), now.month(), now.date()]);
+
 		parser.on('item', function(item) {
-			events.push(parse_event(item));
+			var event_info = parse_event(item);
+			if (!_moment(event_info.day).isBefore(today)) {
+				events.push(event_info);
+			}
 		});
+
 		res.pipe(parser);
 		res.on('end', function() {
 			callback(null, events);
