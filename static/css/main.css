@@ -32,11 +32,13 @@ body {
 
 .chev {
   float: right;
+  margin-top: 8%;
 }
 
 h3 {
   width: 90%;
   padding-right: 9%;
+  display: inline-block;
 }
 
 .footer {
@@ -63,4 +65,12 @@ img {
   margin: auto;
   text-align: center;
   margin-top: 2%;
+}
+
+a {
+  color: #313333;
+}
+
+a:hover {
+  text-decoration: none;
 }
