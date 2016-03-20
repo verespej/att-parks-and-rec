@@ -1,5 +1,3 @@
-var myArray = [];
-
 $(document).ready(function() {
     var url = "/api/events";
     $.ajax({
@@ -15,7 +13,15 @@ $(document).ready(function() {
             $.each(events, function(i, event_info) {
                 var date = $.format.date(event_info.start_time, "MM/dd");
                 var time = $.format.date(event_info.start_time, "h:mm a");
-    			$("#events").append("<a href='" + event_info.event_link + "'><div class='eventResult container'><h3>" + date + " - " + event_info.description + "</h3><img class='chev' src='../img/noun_128420_cc.svg'><h5>" + event_info.location + " at " + time +"</h5></div></a>");
+    			$("#events").append(
+                    "<a href='./event.html?id=" + encodeURIComponent(event_info.guid) + "'>" +
+                        "<div class='eventResult container'>" +
+                            "<h3>" + date + " - " + event_info.description + "</h3>" +
+                            "<img class='chev' src='../img/noun_128420_cc.svg'>" +
+                            "<h5>" + event_info.location + " at " + time +"</h5>" +
+                        "</div>" +
+                    "</a>"
+                );
     			
     		});
         },
@@ -24,9 +30,3 @@ $(document).ready(function() {
         }
     });
 });
-
-// function array.sort(a, b) {
-//     return new Date(b.dtstamp) - new Date(a.dtstamp);
-// }
-
-

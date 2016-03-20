@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equic="X-UA-Compatible" content="IE=edge"> 
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Hello Seattle Parks</title>
+		<meta name="keywords" content="parks alexa seattle gov government park community"/>
+		<meta name="description" content="ATT Hackathon Project"/>
+		<link href="img/page-icon.png" type="image/gif" rel="shortcut icon" />
+		<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+		<script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+		<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-dateFormat/1.0/jquery.dateFormat.min.js"></script>
+
+		<link rel="stylesheet" href="css/main.css">
+		<script src="js/main.js"></script>
+	</head>
+	<body>
+		<h1 class="text-center">Seattle Parks Events</h1>
+		<div id="event_info"></div>
+		<footer class="footer">
+			<div class="container row footer_contents">
+				<div class="col-xs-3 textContainer">
+					<img src="img/noun_395_cc.svg">
+				</div>
+				<div class="col-xs-3 textContainer">
+					<img src="img/noun_4199.svg">
+				</div><div class="col-xs-3 textContainer">
+					<img src="img/noun_11792_cc.svg">
+				</div>
+				<div class="col-xs-3 textContainer">
+					<img src="img/noun_370527_cc.svg">
+				</div>
+			</div>
+		</footer>
+	</body>
+	<script>
+	function get_query_param(name) {
+	    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)");
+        var results = regex.exec(window.location.href);
+	    if (!results) {
+	    	return null;
+	    }
+	    if (!results[2]) {
+	    	return '';
+	    }
+	    return decodeURIComponent(results[2].replace(/\+/g, " "));
+	}
+	$(document).ready(function() {
+	    var url = "/api/events/" + encodeURIComponent(get_query_param('id'));
+	    $.ajax({
+	        type: 'GET',
+	        url: url,
+	        async: false,
+	        contentType: "application/json",
+	        dataType: 'json',
+	        success: function (event_info) {
+                var date = $.format.date(event_info.start_time, "MM/dd");
+                var time = $.format.date(event_info.start_time, "h:mm a");
+    			$("#event_info").append(
+    				"<h1>" + event_info.name + "</h1>" +
+    				"<div class='eventResult container'>" +
+    					"<h3>" + date + ", " + time + "</h3>" +
+    					"<h3>" + event_info.location + "</h3>" +
+    					event_info.description + 
+    					"<h5>Seattle gov page: " + event_info.event_link + "</h5>" +
+    				"</div>"
+    			);
+	        },
+	        error: function (e) {
+	            alert('error');
+	        }
+	    });
+	});
+	</script>
+</html>
